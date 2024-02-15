@@ -9,33 +9,49 @@ const port = 3001;
 // Create a new instance of express.
 const app = express();
 
-// Middleware
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
+const { readFromFile, readAndAppend } = require('./helpers/fsUtils');
 
-app.get("/", (request, response) => {
-	response.sendFile(path.join(__dirname, "/public/index.html"));
-	console.info("something is happening");
+// Middleware to parse JSON form data.
+app.use(express.json());
+
+// Middleware to serve static assets from the pubic folder
+app.use(express.static("/public/assets"))
+
+// * `GET *` should return the `index.html` file.
+app.get("/", (req, resp) => {
+	resp.sendFile(path.join(__dirname, "/public/index.html"));
+	console.info("Viewing index.html file");
 });
 
-app.get("/notes", (request, response) => {
-	response.sendFile(path.join(__dirname, "/public/notes.html"))
-	// return response.json(db);
-})
+// * `GET /notes` should return the `notes.html` file.
+app.get("/notes", (req, resp) => {
+	resp.sendFile(path.join(__dirname, "/public/notes.html"))
+	console.info("Viewing notes.html file");
+	// return resp.json(db);
+});
 
-app.post("/notes", (request, response) => {
+// * `GET /api/notes` should read the `db.json` file and return all saved notes as JSON.
+app.get("/api/notes", (req, resp) => {
+	readFromFile('./db/db.json').then((data) => resp.json(JSON.parse(data)));
+	// data is currently undefined.
+	// console.log(data);
+});
+
+// * `POST /api/notes` should receive a new note to save on the request body, add it to the `db.json` file, and then return the new note to the client.
+// You'll need to find a way to give each note a unique id when it's saved (look into npm packages that could do this for you).
+app.post("/notes", (req, resp) => {
 	console.info(`user input validated.`);
 
 
-	response = {
+	resp = {
 		// status: "success",
-		data: request.body
+		data: req.body
 	};
-	response.json(response.data);
-	console.log(response.json);
+	// resp.json(`item ${resp.data} added.`);
+	console.log(resp.data);
 
-	console.log(request.body);
-})
+	console.log(req.body);
+});
 
 app.listen(port, () => {
 	console.log(`app is listening at http:localhost:${port}`);
