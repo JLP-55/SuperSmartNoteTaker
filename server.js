@@ -2,10 +2,12 @@
 const express = require("express");
 // Require path.
 const path = require("path");
+//  Require file system.
+const fs = require("fs");
 // We also need the database.json file to read from.
 const db = require("./db/db.json")
 // Create port to listen at.
-const port = 3001;
+const PORT = 3001;
 // Create a new instance of express.
 const app = express();
 
@@ -15,7 +17,7 @@ const { readFromFile, readAndAppend } = require('./helpers/fsUtils');
 app.use(express.json());
 
 // Middleware to serve static assets from the pubic folder
-app.use(express.static("/public/assets"))
+app.use(express.static("/assets"));
 
 // * `GET *` should return the `index.html` file.
 app.get("/", (req, resp) => {
@@ -32,16 +34,25 @@ app.get("/notes", (req, resp) => {
 
 // * `GET /api/notes` should read the `db.json` file and return all saved notes as JSON.
 app.get("/api/notes", (req, resp) => {
-	readFromFile('./db/db.json').then((data) => resp.json(JSON.parse(data)));
-	// data is currently undefined.
+	fs.readFile("./db/db.json", "utf8", (error, data) => {
+		error ? console.log(error) : console.log(data)
+	// .then((data) => {
+	// 	let itemsToBeReturned = data.json;
+	// 	return itemsToBeReturned;
+	// 	});
+	});
+	// readFromFile('./db/db.json').then((data) => resp.json(JSON.parse(data)));
+	// // data is currently undefined.
 	// console.log(data);
-});
+});``
 
 // * `POST /api/notes` should receive a new note to save on the request body, add it to the `db.json` file, and then return the new note to the client.
 // You'll need to find a way to give each note a unique id when it's saved (look into npm packages that could do this for you).
 app.post("/notes", (req, resp) => {
-	console.info(`user input validated.`);
+	fs.writeFile("./db/db.json", )
 
+	console.info(`user input validated.`);
+	console.info(req.rawHeaders);
 
 	resp = {
 		// status: "success",
@@ -53,6 +64,6 @@ app.post("/notes", (req, resp) => {
 	console.log(req.body);
 });
 
-app.listen(port, () => {
-	console.log(`app is listening at http:localhost:${port}`);
+app.listen(PORT, () => {
+	console.log(`app is listening at http:localhost:${PORT}`);
 });
