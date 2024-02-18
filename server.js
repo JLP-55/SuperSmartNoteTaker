@@ -10,20 +10,20 @@ const db = require("./db/db.json")
 // Copied from week 11, day 2, student activity 18,
 const uuid = require("./helpers/uuid")
 // Create port to listen at.
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 // Create a new instance of express.
 const app = express();
 
-const { readFromFile, readAndAppend } = require('./helpers/fsUtils');
-
 // Middleware to parse JSON form data.
 app.use(express.json());
+app.use(express.urlencoded ( { extended: true }));
 
 // Middleware to serve static assets from the pubic folder
-app.use(express.static("/assets"));
+app.use(express.static("public"));
 
 // * `GET *` should return the `index.html` file.
 app.get("/", (req, resp) => {
+	//  Send the file back to the user, __dirname is an object available in node.js
 	resp.sendFile(path.join(__dirname, "/public/index.html"));
 	console.info("Viewing index.html file");
 });
@@ -38,9 +38,9 @@ app.get("/notes", (req, resp) => {
 // * `GET /api/notes` should read the `db.json` file and return all saved notes as JSON.
 app.get("/api/notes", (req, resp) => {
 	// console.info(`getting db.json file`);
-	console.info(req.body);
+	// console.info(req.body);
 	// console.info(resp.body);
-	
+
 	// Use file system to read the file.
 	fs.readFile("./db/db.json", "utf8", (error, data) => {
 		error ? console.log(error) : console.log(data); /*return req.rawHeaders;*/
@@ -58,22 +58,41 @@ app.get("/api/notes", (req, resp) => {
 
 // * `POST /api/notes` should receive a new note to save on the request body, add it to the `db.json` file, and then return the new note to the client.
 // You'll need to find a way to give each note a unique id when it's saved (look into npm packages that could do this for you).
-app.post("api/notes", (req, resp) => {
+app.post("/api/notes", (req, resp) => {
 	console.info(`user input validated for ${req.method} request.`);
 	console.info(req.rawHeaders);
 
 	const {title, text} = req.body
+	
+	if (title, text) {
+		console.info(req.body);
+	} else {
+		console.info("nothing is here");
+	};
 
 	const newNote = {
 		title,
 		text,
 		// Callback to the function within ./helpers/uuid
-		review_id: uuid()
+		id: uuid()
 	};
 
-	fs.writeFile("./db/db.json", newNote, (err) => {
-		err ? console.log(error) : console.log("Note writen to file");
-	});
+	fs.readFile("./db/db.json", "utf8", (err, data) => {
+		if (err) {
+			console.log(error);
+		} else {
+			const parsedData = JSON.parse(data);
+			parsedData.push(newNote);
+
+			fs.writeFile("./db/db.json", JSON.stringify(parsedData, null, 4), (err) => {
+				if (err) {
+					console.log(err)
+				} else {
+					console.log("written successfully");
+				}
+			});
+		}
+	})
 
 	// response = {
 	// 	// status: "success",
@@ -83,6 +102,9 @@ app.post("api/notes", (req, resp) => {
 	// console.log(resp.data);
 
 	// console.log(req.body);
+
+	// Provide a resoponse for the user.
+	resp.status(200).json(newNote);
 });
 
 app.listen(PORT, () => {
