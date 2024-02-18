@@ -16,7 +16,7 @@ const app = express();
 
 // Middleware to parse JSON form data.
 app.use(express.json());
-app.use(express.urlencoded ( { extended: true }));
+app.use(express.urlencoded ({ extended: true }));
 
 // Middleware to serve static assets from the pubic folder
 app.use(express.static("public"));
@@ -32,81 +32,100 @@ app.get("/", (req, resp) => {
 app.get("/notes", (req, resp) => {
 	resp.sendFile(path.join(__dirname, "/public/notes.html"))
 	console.info("Viewing notes.html file");
-// return resp.json(db);
 });
 
 // * `GET /api/notes` should read the `db.json` file and return all saved notes as JSON.
 app.get("/api/notes", (req, resp) => {
-	// console.info(`getting db.json file`);
-	// console.info(req.body);
-	// console.info(resp.body);
-
 	// Use file system to read the file.
 	fs.readFile("./db/db.json", "utf8", (error, data) => {
 		error ? console.log(error) : console.log(data); /*return req.rawHeaders;*/
-	// .then((data) => {
-	// 	let itemsToBeReturned = data.json;
-	// 	return itemsToBeReturned;
-	// 	});
 		// Have to send the data, else there will be no response for the user, and the page will time out.
 		resp.status(200).send(data);
 	});
-	// readFromFile('./db/db.json').then((data) => resp.json(JSON.parse(data)));
-	// // data is currently undefined.
-	// console.log(data);
 });
 
 // * `POST /api/notes` should receive a new note to save on the request body, add it to the `db.json` file, and then return the new note to the client.
 // You'll need to find a way to give each note a unique id when it's saved (look into npm packages that could do this for you).
 app.post("/api/notes", (req, resp) => {
 	console.info(`user input validated for ${req.method} request.`);
-	console.info(req.rawHeaders);
 
-	const {title, text} = req.body
-	
+	// Pull the title and text off the body of the request via object desctructuring.
+	const {title, text, id} = req.body
+	// Validate the existence of title and text
 	if (title, text) {
-		console.info(req.body);
-	} else {
-		console.info("nothing is here");
-	};
 
-	const newNote = {
-		title,
-		text,
+		// Create an object, newNote
+		const newNote = {
+			title,
+			text,
 		// Callback to the function within ./helpers/uuid
-		id: uuid()
+			id: uuid()
+		};
+
+		// Read the db.json file.
+		fs.readFile("./db/db.json", "utf8", (err, data) => {
+			if (err) {
+				console.log(err);
+			} else {
+				//  Parse each item in the array, and then push the newNote object.
+				const parsedData = JSON.parse(data);
+				parsedData.push(newNote);
+
+				// Write all the data back to the db.json file using a stringified parsedData variable.
+				fs.writeFile("./db/db.json", JSON.stringify(parsedData, null, 4), (err) => {
+					if (err) {
+						console.log(err)
+					} else {
+						console.log("written successfully");
+					}
+				});
+			};
+			// Respond to the user.
+			resp.status(200).json(newNote);
+		});
+	} else {
+		console.info("error");
 	};
+});
 
-	fs.readFile("./db/db.json", "utf8", (err, data) => {
-		if (err) {
-			console.log(error);
-		} else {
-			const parsedData = JSON.parse(data);
-			parsedData.push(newNote);
+// * `DELETE /api/notes/:id` should receive a query parameter that contains the id of a note to delete.
+// To delete a note, you'll need to read all notes from the `db.json` file, remove the note with the given `id` property, and then rewrite the notes to the `db.json` file.
 
-			fs.writeFile("./db/db.json", JSON.stringify(parsedData, null, 4), (err) => {
-				if (err) {
-					console.log(err)
-				} else {
-					console.log("written successfully");
-				}
-			});
-		}
-	})
+// app.get("/api/notes", (req, resp) => resp.json(db));
 
-	// response = {
-	// 	// status: "success",
-	// 	data: req.body
+app.get("/api/notes/:id", (req, resp) => {
+	console.info(`${req.method} note id`);
+
+	const { id } = req.body;
+	console.log(req.body);
+	// const idNumber = req.params.id;
+	// console.log(idNumber);
+
+	// for (let i = 0; i < db.length; i++) {
+	// 	if (idNumber === id) {
+	// 		console.log("hello");
+	// 	};
 	// };
-	// resp.json(`item ${resp.data} added.`);
-	// console.log(resp.data);
 
-	// console.log(req.body);
+	// Reading the file.
+	// fs.readFile("./db/db.json", "utf8", (error, data) => {
+	// 	error ? console.log(error) : console.log(data);
+	// 	resp.status(200).send(data);
+	// });
 
-	// Provide a resoponse for the user.
-	resp.status(200).json(newNote);
+	// console.info(resp.body);
+	// const { id } = req.body;
+
+	// const deleteById = {
+	// 	id,
+	// };
+
+	// console.log(deleteById);
+	resp.status(200).json(db);
 });
 
 app.listen(PORT, () => {
 	console.log(`app is listening at http:localhost:${PORT}`);
 });
+
+
