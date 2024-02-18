@@ -2,41 +2,111 @@
 const express = require("express");
 // Require path.
 const path = require("path");
+//  Require file system.
+const fs = require("fs");
 // We also need the database.json file to read from.
 const db = require("./db/db.json")
+// Helper method for generating unique id's
+// Copied from week 11, day 2, student activity 18,
+const uuid = require("./helpers/uuid")
 // Create port to listen at.
-const port = 3001;
+const PORT = process.env.PORT || 3001;
 // Create a new instance of express.
 const app = express();
 
-// Middleware
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
+// Middleware to parse JSON form data.
+app.use(express.json());
+app.use(express.urlencoded ( { extended: true }));
 
-app.get("/", (request, response) => {
-	response.sendFile(path.join(__dirname, "/public/index.html"));
-	console.info("something is happening");
+// Middleware to serve static assets from the pubic folder
+app.use(express.static("public"));
+
+// * `GET *` should return the `index.html` file.
+app.get("/", (req, resp) => {
+	//  Send the file back to the user, __dirname is an object available in node.js
+	resp.sendFile(path.join(__dirname, "/public/index.html"));
+	console.info("Viewing index.html file");
 });
 
-app.get("/notes", (request, response) => {
-	response.sendFile(path.join(__dirname, "/public/notes.html"))
-	// return response.json(db);
-})
+// * `GET /notes` should return the `notes.html` file.
+app.get("/notes", (req, resp) => {
+	resp.sendFile(path.join(__dirname, "/public/notes.html"))
+	console.info("Viewing notes.html file");
+// return resp.json(db);
+});
 
-app.post("/notes", (request, response) => {
-	console.info(`user input validated.`);
+// * `GET /api/notes` should read the `db.json` file and return all saved notes as JSON.
+app.get("/api/notes", (req, resp) => {
+	// console.info(`getting db.json file`);
+	// console.info(req.body);
+	// console.info(resp.body);
 
+	// Use file system to read the file.
+	fs.readFile("./db/db.json", "utf8", (error, data) => {
+		error ? console.log(error) : console.log(data); /*return req.rawHeaders;*/
+	// .then((data) => {
+	// 	let itemsToBeReturned = data.json;
+	// 	return itemsToBeReturned;
+	// 	});
+		// Have to send the data, else there will be no response for the user, and the page will time out.
+		resp.status(200).send(data);
+	});
+	// readFromFile('./db/db.json').then((data) => resp.json(JSON.parse(data)));
+	// // data is currently undefined.
+	// console.log(data);
+});
 
-	response = {
-		// status: "success",
-		data: request.body
+// * `POST /api/notes` should receive a new note to save on the request body, add it to the `db.json` file, and then return the new note to the client.
+// You'll need to find a way to give each note a unique id when it's saved (look into npm packages that could do this for you).
+app.post("/api/notes", (req, resp) => {
+	console.info(`user input validated for ${req.method} request.`);
+	console.info(req.rawHeaders);
+
+	const {title, text} = req.body
+	
+	if (title, text) {
+		console.info(req.body);
+	} else {
+		console.info("nothing is here");
 	};
-	response.json(response.data);
-	console.log(response.json);
 
-	console.log(request.body);
-})
+	const newNote = {
+		title,
+		text,
+		// Callback to the function within ./helpers/uuid
+		id: uuid()
+	};
 
-app.listen(port, () => {
-	console.log(`app is listening at http:localhost:${port}`);
+	fs.readFile("./db/db.json", "utf8", (err, data) => {
+		if (err) {
+			console.log(error);
+		} else {
+			const parsedData = JSON.parse(data);
+			parsedData.push(newNote);
+
+			fs.writeFile("./db/db.json", JSON.stringify(parsedData, null, 4), (err) => {
+				if (err) {
+					console.log(err)
+				} else {
+					console.log("written successfully");
+				}
+			});
+		}
+	})
+
+	// response = {
+	// 	// status: "success",
+	// 	data: req.body
+	// };
+	// resp.json(`item ${resp.data} added.`);
+	// console.log(resp.data);
+
+	// console.log(req.body);
+
+	// Provide a resoponse for the user.
+	resp.status(200).json(newNote);
+});
+
+app.listen(PORT, () => {
+	console.log(`app is listening at http:localhost:${PORT}`);
 });
