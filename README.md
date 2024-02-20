@@ -3,16 +3,6 @@
 The goal of this project was to create an application that would enable a user to succinctly take notes to organise and keep track of tasks they have to complete.<br>
 
 ---
-<details>
-    <summary>Table of contents</summary>
-    <ul>
-        <li>
-            <a href="#item">Item</a>
-        </li>
-    </ul>
-</details>
-
----
 ### Usage
 
 To use, simply click Get started and, upon being taken to the next page, just enter your note title and note text in the areas that prompt you to do so.<br>
